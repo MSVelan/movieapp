@@ -1,0 +1,89 @@
+#+title: README
+
+** Objective
+To design a movie app, for now say the planned features:
+
+- Get movie metadata (title, yr, desc, director) and aggregrated rating
+- Rate a movie
+
+** System design
+We notice that movie metadata is static mostly and won't be changed much whereas ratings are dynamic and can be dynamic.
+Ratings also should be aggregated on the go or we should store the aggregated data somewhere.
+This hints us that its better to separate movies and ratings service.
+
+Now say the ratings service expands and we know want to facilitate the rating of actor, movie soundtrack along with the movies themselves.
+Considering this now the API's exposed by the ratings service:
+
+- Store the rating record (UserId, RecordType, RecordID, RatingsValue)
+- Get the aggregated rating for a record by its ID and type.
+
+We also notice that the logic is loosely coupled, data models are different and data is mostly independent.
+This justifies the separation of services.
+
+Now say that later we also want to integrate likes and recommendations, we can't just add it to the movies metadata service,
+it would be better if we have a separate movie service and add the likes, reviews, recommendations to it instead.
+This way the metadata service just holds the static data of the movies.
+
+#+begin_src dot :results output :exports results :file img/services.png :cmdline -Kdot -Tpng
+digraph {
+        {rank=same metadata_service rating_service}
+        metadata_service[shape=box, label="Metadata Service"]
+        rating_service[shape=box, label="Rating Service"]
+        movie_service[shape=box, label="Movie Service"];
+        movie_service -> metadata_service [style=dotted];
+        movie_service -> rating_service [style=dotted];
+}
+#+end_src
+
+#+RESULTS:
+[[file:img/services.png]]
+
+** Microservice design
+
+Each microservice can contain 1 or more packages to handle the following roles:
+- API handlers
+- Business/application logic
+- Database logic
+- Interaction with other services
+
+When the applications primary purpose is to handle API requests, its not necessary to separate business logic from API handlers.
+Although it is advised to separate because when we change from one type of API to another (say HTTP to gRPC) or support both,
+there is no need to implement the same logic twice or rewrite it.
+
+Go community doesn't provide specific naming convention for handling such roles, but I have used the following names:
+- *controller*: Business logic
+- *gateway*: Logic for interacting with other services
+- *handler*: API handlers
+- *repository*: Database Logic
+- *internal*: All code that won't be exported
+- *pkg*: Exported structures reside here.
+
+*** Movie metadata service
+- API: Get metadata for a movie
+- Database: Movie metadata database
+- Interacts with services: None
+- Data model type: Movie metadata
+
+*** Rating service
+- API: Get the aggregated rating for a record and write a rating
+- Database: Rating database
+- Interacts with service: None
+- Data model type: Rating
+
+*** Movie service
+- API: Get movie details, including aggregated ratings and movie metadata
+- Database: None
+- Interacts with service: Movie metadata and rating
+- Data model type: Movie details
+
+** Steps helpful while creating a microservice
+
+First create the model(data model), then repository(deals with storing that data model somewhere), then create the controller(business logic while operates on the data model).
+After this create the handler and pass on to the API handler function.
+
+The caller first creates the model structure(data), then pass that to the controller. Pass the controller to the handler,
+pass the handler to the API.
+
+Data model will be used by the caller mostly, so place that in pkg directory, whereas the controller, repository and handlers can be placed in the internal directory.
+
+Controller provides some interface and the repository will implement, for example: (metadata repository implement Get and Put functions).
