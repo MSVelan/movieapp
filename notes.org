@@ -151,3 +151,11 @@ digraph {
 
 *** Service Discovery solutions
 Popular service discovery solutions include HashiCorp Consul and Kubernetes.
+
+In this project I have used hashicorp-consul for service discovery and this is status when all services are running.
+
+[[./img/hashicorp-consul-output.png]]
+
+In the following image, we see that the movie microservice is correctly calling the metadata microservice with its correct URL.
+
+[[./img/service-discovery-output.png]]
