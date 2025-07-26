@@ -1,3 +1,8 @@
+// this in-memory implementation isn't fully developed yet.
+// we have to abstract this logic to a new service which creates new registry in a hostPort
+// and accepts connections from services on that hostPort.
+// This is how we avoid sharing the same registry object among multiple services.
+// Since hashicorp/consul already has this implementation, we proceed to go with that.
 package memory
 
 import (
@@ -11,6 +16,7 @@ import (
 // Registry defines an in-memory service registry.
 type Registry struct {
 	sync.RWMutex
+	// serviceAddrs[serviceName][instanceID] = serviceInstanceStruct
 	serviceAddrs map[string]map[string]*serviceInstance
 }
 

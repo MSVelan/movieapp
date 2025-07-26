@@ -153,9 +153,29 @@ digraph {
 Popular service discovery solutions include HashiCorp Consul and Kubernetes.
 
 In this project I have used hashicorp-consul for service discovery and this is status when all services are running.
+Note: The in-memory implementation isn't fully developed yet. We have to abstract the logic to a new service which creates new registry in a hostPort and accepts connections from services on that hostPort. This is how we avoid sharing the same registry object among multiple services. Since HashiCorp-Consul already has this implementation, we proceed to go with that.
 
 [[./img/hashicorp-consul-output.png]]
 
 In the following image, we see that the movie microservice is correctly calling the metadata microservice with its correct URL.
 
 [[./img/service-discovery-output.png]]
+
+** Serialization and Deserialization of data
+Currently we are using JSON for serialization of data and passing it over HTTP for communication between services. The issue with using JSON format is that it can be slower compared to other formats and the size is more.
+
+There are other data serialization formats such as XML (size is largest compared to its alternatives), YAML(greater size after serialization, supports comments), Apache Thrift(requires defining models in their own format, 30% to 50% lesser size compared to XML or JSON, there are better options for encoding), Apache Avro (supports versioning, we can define data in JSON or Avro IDL), Protocol buffers (simplicity of language, small data output size, high performance, protocol evolution, define services and compile to target programming language).
+
+To put into perspective, the script in the cmd/sizecompare directory is used to measure the size of the serialized sample data and speed of serialization comparing JSON, XML and protobuffers and here is the result:
+
+[[./img/serialization-size-comparisons.png]]
+
+We see that XML serialized data is almost 40% more than JSON serialized data, whereas Proto serialized data is less than 50% of the JSON serialized data.
+
+Comparing the serialization speed:
+
+[[./img/serialization-speed-comparisons.png]]
+
+Here we see that Proto serialization is atleast 40% faster than JSON serialization and almost 16 times faster than XML serialization.
+
+Protocol buffers is a popular option and we will be using this for our project.

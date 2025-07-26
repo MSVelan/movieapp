@@ -43,7 +43,7 @@ func main() {
 	defer registry.Deregister(ctx, instanceID, serviceName)
 
 	repo := memory.New()
-	svc := metadata.New(repo)
+	svc := metadata.New(repo) // svc is same as controller
 	h := httphandler.New(svc)
 	http.Handle("/metadata", http.HandlerFunc(h.GetMetadata))
 	if err := http.ListenAndServe(fmt.Sprintf(":%d", port), nil); err != nil {
