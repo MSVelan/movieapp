@@ -1,21 +1,21 @@
 
 # Table of Contents
 
-1.  [Services implemented:](#org78fbf5d)
-    1.  [Movie metadata service](#org281bad1)
-    2.  [Rating service](#org39ccedc)
-    3.  [Movie service](#orgf7491ce)
-2.  [Other Details](#orgc27d10e)
+1.  [Services implemented:](#orgad719e3)
+    1.  [Movie metadata service](#org6d456d9)
+    2.  [Rating service](#org7edbb22)
+    3.  [Movie service](#orgcffc0a8)
+2.  [Other Details](#org19319e7)
 
 This repository consists of three microservices: movie, metadata and rating. This is a practice project that I used to learn about microservices.
 
 
-<a id="org78fbf5d"></a>
+<a id="orgad719e3"></a>
 
 # Services implemented:
 
 
-<a id="org281bad1"></a>
+<a id="org6d456d9"></a>
 
 ## Movie metadata service
 
@@ -25,7 +25,7 @@ This repository consists of three microservices: movie, metadata and rating. Thi
 -   Data model type: Movie metadata
 
 
-<a id="org39ccedc"></a>
+<a id="org7edbb22"></a>
 
 ## Rating service
 
@@ -35,7 +35,7 @@ This repository consists of three microservices: movie, metadata and rating. Thi
 -   Data model type: Rating
 
 
-<a id="orgf7491ce"></a>
+<a id="orgcffc0a8"></a>
 
 ## Movie service
 
@@ -47,10 +47,9 @@ This repository consists of three microservices: movie, metadata and rating. Thi
     ![img](./img/services.png)
 
 
-<a id="orgc27d10e"></a>
+<a id="org19319e7"></a>
 
 # Other Details
 
 Implemented service discovery with HashiCorp/Consul, implemented synchronous communication using HTTP API endpoints as well as gRPC endpoints.
-For more details on how I implemented this, please check out <./notes.md>.
-
+For more details on how I implemented this, please check out [notes.md](./notes.md).
