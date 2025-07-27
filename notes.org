@@ -202,3 +202,145 @@ Steps for converting HTTP API endpoints to gRPC:
   - The metadata gateway should just get the metadata. To implement this, get an active connection from metadata service, create new metadata client and then call the =GetMetadata= function from the generated gRPC code and return the data generated from the response.
   - Do the same thing for the rating gateway which implements =GetAggregatedRating= function.
 - Update the main function of the movie service to create the gRPC handler, create gRPC server, listen to the tcp network for a hostPort, register movie service server with the handler and serve the listener in gRPC server created.
+
+Here is the output after integration of gRPC to the services and testing with grpcurl:
+
+[[./img/grpc-call-outputs.png]]
+
+** Asynchronous Communication
+
+*** Basics
+
+Asynchronous communication is a communication between sender and one or more receivers, where a sender does not necessarily expect an immediate response to the messages. It can take an arbitrary amount of time for the receiver to respond or not at all.
+
+Asynchronous communication can be even faster than synchronous communication as it avoids context switching when handling multiple requests. So far we have just used synchronous communication.
+
+*** Pros and Cons
+**** Pros
+- Streamlined processing of messages: No need to wait to process and get the response.
+- Ability to decouple the sending and processing of requests.
+- Better load balancing: Avoids uneven request loads and sudden spikes of request.
+
+It is better suited for the cases such as long running processing tasks, send once and processed by multiple clients.
+
+**** Cons
+- More complex error handling.
+- Reliance on additional components for message delivery.
+
+*** Message Broker
+
+It is an intermediary component in the communication chain that plays multiple roles such as message delivery, message transformation, message aggregation and message routing.
+
+It guarantees delivery and provides various levels of guarantees such as:
+- *At-least once*: Message gets delivered at-least once, but maybe delivered multiple times in case of failures (lossless).
+- *Exactly once*: Message broker guarantees message delivery and it will be delivered exactly once (lossless).
+- *At-most once*: The message can be delivered 0 or 1 time (lossy).
+
+They are capable of handling multiple forms of communication models such as pub-sub or message queues, etc.
+
+*** Patterns of asynchronous communication
+
+**** Publisher-subscriber model
+
+Every component can publish messages and subscribe to the relevant ones. The relevant messages are delivered to the subscribers without directly contacting the publisher and check if there is any new data to consume. Follows one-to-many communication.
+
+#+begin_src dot :results output :exports results :file img/pub-sub-model.png :cmdline -Kdot -Tpng
+digraph {
+    rankdir=TB;
+
+    {rank=source; pub1;}
+
+    pub_data;
+
+    {rank=sink; sub1; sub2; sub3;}
+
+    pub1 [shape=box, label="Publisher"]
+    pub_data [shape=box, label="Publisher's data"]
+    sub1 [shape=box, label="Subscriber"]
+    sub2 [shape=box, label="Subscriber"]
+    sub3 [shape=box, label="Subscriber"]
+
+    pub1 -> pub_data;
+    pub_data -> sub1 [style=dotted];
+    pub_data -> sub2 [style=dotted];
+    pub_data -> sub3 [style=dotted];
+
+    labelloc="b";
+    label="Fig: Publisher Subscriber Model";
+}
+#+end_src
+
+#+RESULTS:
+[[file:img/pub-sub-model.png]]
+
+**** Message Queue model
+
+Used where the event has to be consumed only once. (One-to-one communication)
+
+*** Event Driven Architecture(EDA) Patterns
+
+Refer to my blog on the 4 commonly used EDA Patterns: [[https://msvelan.netlify.app/p/event-driven-architecture/]]
+
+*** Using Apache Kafka as the message broker
+
+Few terminologies before we go further:
+- Component that produces message is called *producer*.
+- Messages are published in a sequential order to objects called *topics*.
+- Each message in a topic, has a unique numerical *offset* in it.
+- *Partitioning*: Allows data locality, for example we can partition we can partition the data using UserID, this allows data for any user is stored in a single topic partition, simplifying data search across topic partitions. =groupID= is used for partitioning.
+- Component that consumes messages of existing topics is called *consumer*
+
+Say we want to work with some ratings provider(eg: IMDB), which will provide ratings for a movie to us. We need to ingest these ratings along with the rating API that we created earlier. We can make this communication async as we don't need to process this bulk information immediately.
+
+For this I have used Apache Kafka as message broker which stores the rating data. We are going to handle the new rating data as soon as it gets published. We use the JSON format for serialization for simplicity.
+
+For the publisher, let's have an example application that produces rating data and let's have the rating service subscribe to it.
+
+#+begin_src dot :exports results :results output :file img/pub-sub-rating.png :cmdline -Kdot -Tpng
+digraph {
+    rankdir = TB;
+    {rank=source; data_provider};
+    {rank=sink; rating_db};
+
+    data_provider [shape=box, label="Data Provider"];
+    rating_data [shape=box, label="Rating Data"];
+    rating_service [shape=box, label="Rating Service"];
+    rating_db [shape=cylinder, label="Rating DB"];
+
+    data_provider -> rating_data [xlabel="Publish"];
+    rating_data -> rating_service [style=dotted, xlabel="Subscribe"];
+    rating_service -> rating_db;
+
+    labelloc=b;
+    label="Fig: Publisher-subscriber model for rating ingestion from data provider"
+}
+#+end_src
+
+#+RESULTS:
+[[file:img/pub-sub-rating.png]]
+
+**** Application to produce ratings data
+
+- Create =RatingEvent= struct in the =rating/pkg/model/rating.go= file.
+- Create =cmd/ratingingester/main.go= file which essentially creates a new Kafka producer, reads the =ratingsdata.json= file to and decodes them to =[]model.Metadata= using json decoder.
+- Use the created producer to produce the Kafka message with the event after converting the metadata to JSON and have a timeout for all the events to get produced.
+
+**** Rating Data Consumer
+
+- Create =rating/internal/ingester/kafka/ingester.go= file.
+- Create an =Ingester= struct that consists of Kafka consumer and the topic(string) which it has to subscribe to.
+- Add =NewIngester= function which creates new Kafka consumer and returns =Ingester= object.
+- Create =Ingest= function and attach it to =Ingester= struct, which takes in context and returns =model.RatingEvent= channel and implement the logic.
+- The next thing is to implement the controller logic. Create an interface which has the same definition as Ingest function which we created. Now =Ingester= struct implements this interface and we add the interface created to the controller, change the definition of the controller.
+- Create =StartIngestion= function which gets the channel from the =Ingest= function and puts each event in the channel to ratings database (currently in-memory).
+- The final step is to update the changes in the =rating/cmd/main.go= file. Create =NewIngester= object and pass it to the controller. Call the =StartIngestion= function from the controller in a go routine to run the =ingester= along with the API implemented.
+
+*** Results
+
+Before running the producer script in =cmd/ratingingester/main.go=, if we run =rating/cmd/main.go=, we get the following output as there is no topic such as rating is available still.
+
+[[./img/kafka-ratings-not-found.png]]
+
+In the following figure I run =rating/cmd/main.go= file first which listens for the channel and then run the producer script (=cmd/ratingingestor/main.go=). We see that the data is being read correctly in the rating service(bottom figure). We also verify this in the top half of the figure by using grpcurl to call the RatingService/GetAggregatedRating gRPC endpoint.
+
+[[./img/kafka-rating-ingestion-output.png]]

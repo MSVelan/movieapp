@@ -3,6 +3,8 @@ package rating
 import (
 	"context"
 	"errors"
+	"log"
+
 	"github.com/MSVelan/movieapp/rating/internal/repository"
 	"github.com/MSVelan/movieapp/rating/pkg/model"
 )
@@ -14,13 +16,18 @@ type ratingRepository interface {
 	Put(ctx context.Context, recordID model.RecordID, recordType model.RecordType, rating *model.Rating) error
 }
 
-// Controller defines a rating service controller
-type Controller struct {
-	repo ratingRepository
+type ratingIngester interface {
+	Ingest(ctx context.Context) (chan model.RatingEvent, error)
 }
 
-func New(repo ratingRepository) *Controller {
-	return &Controller{repo}
+// Controller defines a rating service controller
+type Controller struct {
+	repo     ratingRepository
+	ingester ratingIngester
+}
+
+func New(repo ratingRepository, ingester ratingIngester) *Controller {
+	return &Controller{repo, ingester}
 }
 
 // GetAggregatedRating returns the aggregated rating for a record
@@ -43,4 +50,24 @@ func (c *Controller) GetAggregatedRating(ctx context.Context, recordID model.Rec
 // PutRating writes a rating for a give record.
 func (c *Controller) Put(ctx context.Context, recordID model.RecordID, recordType model.RecordType, rating *model.Rating) error {
 	return c.repo.Put(ctx, recordID, recordType, rating)
+}
+
+// StartIngestion starts the ingestion of rating events.
+func (c *Controller) StartIngestion(ctx context.Context) error {
+	ch, err := c.ingester.Ingest(ctx)
+	if err != nil {
+		return err
+	}
+
+	for e := range ch {
+		if err := c.Put(ctx, e.RecordID, e.RecordType, &model.Rating{
+			UserID: e.UserID,
+			Value:  e.Value,
+		}); err != nil {
+			return err
+		}
+		log.Printf("Put %s, %s, %s, %d\n", e.RecordID, e.RecordType, e.UserID, e.Value)
+	}
+
+	return nil
 }

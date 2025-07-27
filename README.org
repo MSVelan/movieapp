@@ -27,3 +27,55 @@ This repository consists of three microservices: movie, metadata and rating. Thi
 ** Other Details
 Implemented service discovery with HashiCorp/Consul, implemented synchronous communication using HTTP API endpoints as well as gRPC endpoints.
 For more details on how I implemented this, please check out [[./notes.md][notes.md]].
+
+** Setup
+
+*** Hashicorp/Consul Setup
+
+#+begin_src shell
+docker run -d -p 8500:8500 -p 8600:8600/udp --name=dev-consul hashicorp/consul agent -server -ui -node=server-1 -bootstrap-expect=1 -client=0.0.0.0
+#+end_src
+
+
+*** Kafka Setup
+**** Docker
+
+- Get the Docker image:
+
+#+begin_src shell
+docker pull apache/kafka:4.0.0
+#+end_src
+
+- Start the Kafka Docker container:
+
+#+begin_src shell
+docker run -p 9092:9092 apache/kafka:4.0.0
+#+end_src
+
+**** Run locally:
+
+- Generate a Cluster UUID
+
+#+begin_src shell
+KAFKA_CLUSTER_ID="$(bin/kafka-storage.sh random-uuid)"
+#+end_src
+
+- Format Log Directories
+
+#+begin_src shell
+bin/kafka-storage.sh format --standalone -t $KAFKA_CLUSTER_ID -c config/server.properties
+#+end_src
+
+- Start the Kafka Server
+
+#+begin_src shell
+bin/kafka-server-start.sh config/server.properties
+#+end_src
+
+*** Run the services
+
+#+begin_src shell
+go run metadata/cmd/main.go
+go run rating/cmd/main.go
+go run movie/cmd/main.go
+#+end_src
