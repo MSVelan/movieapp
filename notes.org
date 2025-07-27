@@ -92,7 +92,7 @@ Controller provides some interface and the repository will implement, for exampl
 
 ** Service Discovery
 
-We have pre-programmed static values of the addresses of services (Metadata-localhost:8081, Rating-localhost:8082, Movie-localhost:8083).
+We have pre-programmed static values of the addresses of services (Metadata-=localhost:8081=, Rating-=localhost:8082=, Movie-=localhost:8083=).
 The problem with this is that how do we handle multiple instances of a service and how to handle if some of the instances aren't available.
 
 Well, we can keep a list of addresses in each service for each of the other service instances.
@@ -166,7 +166,7 @@ Currently we are using JSON for serialization of data and passing it over HTTP f
 
 There are other data serialization formats such as XML (size is largest compared to its alternatives), YAML(greater size after serialization, supports comments), Apache Thrift(requires defining models in their own format, 30% to 50% lesser size compared to XML or JSON, there are better options for encoding), Apache Avro (supports versioning, we can define data in JSON or Avro IDL), Protocol buffers (simplicity of language, small data output size, high performance, protocol evolution, define services and compile to target programming language).
 
-To put into perspective, the script in the cmd/sizecompare directory is used to measure the size of the serialized sample data and speed of serialization comparing JSON, XML and protobuffers and here is the result:
+To put into perspective, the script in the =cmd/sizecompare= directory is used to measure the size of the serialized sample data and speed of serialization comparing JSON, XML and protobuffers and here is the result:
 
 [[./img/serialization-size-comparisons.png]]
 
@@ -179,3 +179,26 @@ Comparing the serialization speed:
 Here we see that Proto serialization is atleast 40% faster than JSON serialization and almost 16 times faster than XML serialization.
 
 Protocol buffers is a popular option and we will be using this for our project.
+
+** Synchronous Communication
+
+In this form of communication, services communicate through request-response model. We have implemented synchronous communication through HTTP protocol.
+gRPC is useful because it is a RPC framework. RPC frameworks allow generation of client code to connect and send data to other microservices as well generation of server code for accepting connections and receive data. They offer authentication, context propagation and documentation generation.
+
+gRPC uses HTTP/2 as transport protocol and protocol buffers as serialization format.
+
+Steps for converting HTTP API endpoints to gRPC:
+
+- Write the service functions and messages in the =api= directory and generate the gRPC code in some other directory, say gen.
+- Create the mapping logic for converting to and from the internal model to the generated gRPC model.
+- Implement the gRPC handlers for each services
+  - For this create a handler with =gen.UnImplementedServiceServer= and the service controller which was already implemented.
+  - Add logic to create a new handler and implement the services as described in the generated code, attach it to the handler.
+- Change the =main.go= for each of the services to create a new handler, grpc server, listen to the tcp network for a hostPort, =gen.RegisterServiceServer(grpc server, handler)= and then serve the listener in gRPC server created.
+
+- For the movie service, added an util function in =internal/grpcutil= directory which takes in serviceName and registry and returns a gRPC new client from the active service instances of the service.
+- Implement the gRPC gateway for both metadata service and rating service inside the =movie/internal/gateway= directory.
+  - For this, create a new Gateway struct with registry, implement function to create a new Gateway.
+  - The metadata gateway should just get the metadata. To implement this, get an active connection from metadata service, create new metadata client and then call the =GetMetadata= function from the generated gRPC code and return the data generated from the response.
+  - Do the same thing for the rating gateway which implements =GetAggregatedRating= function.
+- Update the main function of the movie service to create the gRPC handler, create gRPC server, listen to the tcp network for a hostPort, register movie service server with the handler and serve the listener in gRPC server created.

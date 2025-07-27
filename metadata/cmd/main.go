@@ -5,14 +5,17 @@ import (
 	"flag"
 	"fmt"
 	"log"
-	"net/http"
+	"net"
 	"time"
 
+	"github.com/MSVelan/movieapp/gen"
 	"github.com/MSVelan/movieapp/metadata/internal/controller/metadata"
-	httphandler "github.com/MSVelan/movieapp/metadata/internal/handler/http"
+	grpchandler "github.com/MSVelan/movieapp/metadata/internal/handler/grpc"
 	"github.com/MSVelan/movieapp/metadata/internal/repository/memory"
 	"github.com/MSVelan/movieapp/pkg/discovery"
 	"github.com/MSVelan/movieapp/pkg/discovery/consul"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/reflection"
 )
 
 const serviceName = "metadata"
@@ -44,9 +47,15 @@ func main() {
 
 	repo := memory.New()
 	svc := metadata.New(repo) // svc is same as controller
-	h := httphandler.New(svc)
-	http.Handle("/metadata", http.HandlerFunc(h.GetMetadata))
-	if err := http.ListenAndServe(fmt.Sprintf(":%d", port), nil); err != nil {
+	h := grpchandler.New(svc)
+	lis, err := net.Listen("tcp", fmt.Sprintf("localhost:%v", port))
+	if err != nil {
+		log.Fatalf("failed to listen: %v", err)
+	}
+	srv := grpc.NewServer()
+	reflection.Register(srv)
+	gen.RegisterMetadataServiceServer(srv, h)
+	if err := srv.Serve(lis); err != nil {
 		panic(err)
 	}
 }
