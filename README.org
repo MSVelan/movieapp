@@ -6,13 +6,13 @@ This repository consists of three microservices: movie, metadata and rating. Thi
 
 *** Movie metadata service
 - API: Get metadata for a movie and Put metadata for a movie
-- Database: Movie metadata database (in-memory implementation)
+- Database: Movie metadata database (in-memory and MySQL implementation)
 - Interacts with services: None
 - Data model type: Movie metadata
 
 *** Rating service
 - API: Get the aggregated rating for a record and write a rating
-- Database: Rating database (in-memory implementation)
+- Database: Rating database (in-memory and MySQL implementation)
 - Interacts with service: None
 - Data model type: Rating
 
@@ -28,7 +28,7 @@ This repository consists of three microservices: movie, metadata and rating. Thi
 - service discovery with HashiCorp/Consul
 - synchronous communication using HTTP API endpoints as well as gRPC endpoints.
 - asynchronous communication using Apache Kafka
-- in-memory data stores for the microservices
+- in-memory data stores and MySQL for the microservices
 
 For more details on how I implemented this, please check out [[./notes.md][notes.md]].
 
@@ -74,6 +74,37 @@ Start the Kafka Server
 
 #+begin_src shell
 bin/kafka-server-start.sh config/server.properties
+#+end_src
+
+*** MySQL setup:
+
+**** Docker
+
+#+begin_src shell
+docker run --name movieapp_db -e MYSQL_ROOT_PASSWORD=password -e MYSQL_DATABASE=movieapp -p 3306:3306 -d mysql:latest
+#+end_src
+
+#+begin_src shell
+docker exec -i movieapp_db mysql movieapp -h localhost -P 3306 --protocol=tcp -uroot -ppassword < schema/schema.sql
+#+end_src
+
+Create .env file in pkg/mysql/ directory and add password:
+#+begin_src shell
+PASSWORD=password
+#+end_src
+
+**** Local setup
+
+Create movieapp database making sure that mysql is running in port 3306 (default port).
+
+Create schema using:
+#+begin_src shell
+mysql -u root -p movieapp < schema/schema.sql
+#+end_src
+
+Create =.env= file in =pkg/mysql/= directory and add password:
+#+begin_src shell
+PASSWORD=<your-root-password>
 #+end_src
 
 *** Run the services

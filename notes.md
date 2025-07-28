@@ -1,38 +1,42 @@
 
 # Table of Contents
 
-1.  [Objective](#org7f2cc32)
-2.  [System design](#orga8c463e)
-3.  [Microservice design](#org141c70c)
-    1.  [Movie metadata service](#org47e5cbc)
-    2.  [Rating service](#org92760c2)
-    3.  [Movie service](#org427d616)
-4.  [Steps helpful while creating a microservice](#orge5f8f65)
-5.  [Service Discovery](#orgf3d314e)
-    1.  [Registry](#org4d6c5af)
-    2.  [Discovery models](#org96dd8fe)
-    3.  [Service Health monitoring](#orge710074)
-    4.  [Service Discovery solutions](#org50e67c8)
-6.  [Serialization and Deserialization of data](#org2a39b11)
-7.  [Synchronous Communication](#org0a683c3)
-8.  [Asynchronous Communication](#org4a46095)
-    1.  [Basics](#org8aef771)
-    2.  [Pros and Cons](#orge23403c)
-        1.  [Pros](#orge11c403)
-        2.  [Cons](#orgc3cf65f)
-    3.  [Message Broker](#orgafe7890)
-    4.  [Patterns of asynchronous communication](#org674fb48)
-        1.  [Publisher-subscriber model](#orge50be17)
-        2.  [Message Queue model](#org495af86)
-    5.  [Event Driven Architecture(EDA) Patterns](#org761f30f)
-    6.  [Using Apache Kafka as the message broker](#orgb8e210f)
-        1.  [Application to produce ratings data](#orgd2bae5b)
-        2.  [Rating Data Consumer](#org3ff73e8)
-    7.  [Results](#org99e459d)
+1.  [Objective](#orgd2b9d77)
+2.  [System design](#org702bb80)
+3.  [Microservice design](#org0ca878f)
+    1.  [Movie metadata service](#org0850c04)
+    2.  [Rating service](#orgc721391)
+    3.  [Movie service](#org4d20fce)
+4.  [Steps helpful while creating a microservice](#orgae8eb86)
+5.  [Service Discovery](#orgb39d693)
+    1.  [Registry](#org3c5cf19)
+    2.  [Discovery models](#orgbc09811)
+    3.  [Service Health monitoring](#orgbddb235)
+    4.  [Service Discovery solutions](#org6dbeeb7)
+6.  [Serialization and Deserialization of data](#orga3e8b45)
+7.  [Synchronous Communication](#org25d9eaf)
+8.  [Asynchronous Communication](#org66900c9)
+    1.  [Basics](#org2e9d447)
+    2.  [Pros and Cons](#org1d0633d)
+        1.  [Pros](#org17e9f8b)
+        2.  [Cons](#org3b90451)
+    3.  [Message Broker](#orgcbe15df)
+    4.  [Patterns of asynchronous communication](#org030ee96)
+        1.  [Publisher-subscriber model](#org85053e8)
+        2.  [Message Queue model](#orgcde0d60)
+    5.  [Event Driven Architecture(EDA) Patterns](#orgd61ed75)
+    6.  [Using Apache Kafka as the message broker](#org6f69b2d)
+        1.  [Application to produce ratings data](#org03b1516)
+        2.  [Rating Data Consumer](#orged6ad48)
+    7.  [Results](#orga7d0b05)
+9.  [Databases](#org53d2bde)
+    1.  [SQL setup](#org14209c8)
+    2.  [Steps to add SQL integration to the repository](#orgc94f6af)
+    3.  [Testing results](#org1b1140b)
 
 
 
-<a id="org7f2cc32"></a>
+<a id="orgd2b9d77"></a>
 
 # Objective
 
@@ -42,7 +46,7 @@ To design a movie app, for now say the planned features:
 -   Rate a movie
 
 
-<a id="orga8c463e"></a>
+<a id="org702bb80"></a>
 
 # System design
 
@@ -66,7 +70,7 @@ This way the metadata service just holds the static data of the movies.
 ![img](img/services.png)
 
 
-<a id="org141c70c"></a>
+<a id="org0ca878f"></a>
 
 # Microservice design
 
@@ -91,7 +95,7 @@ Go community doesn&rsquo;t provide specific naming convention for handling such 
 -   **pkg**: Exported structures reside here.
 
 
-<a id="org47e5cbc"></a>
+<a id="org0850c04"></a>
 
 ## Movie metadata service
 
@@ -101,7 +105,7 @@ Go community doesn&rsquo;t provide specific naming convention for handling such 
 -   Data model type: Movie metadata
 
 
-<a id="org92760c2"></a>
+<a id="orgc721391"></a>
 
 ## Rating service
 
@@ -111,7 +115,7 @@ Go community doesn&rsquo;t provide specific naming convention for handling such 
 -   Data model type: Rating
 
 
-<a id="org427d616"></a>
+<a id="org4d20fce"></a>
 
 ## Movie service
 
@@ -121,7 +125,7 @@ Go community doesn&rsquo;t provide specific naming convention for handling such 
 -   Data model type: Movie details
 
 
-<a id="orge5f8f65"></a>
+<a id="orgae8eb86"></a>
 
 # Steps helpful while creating a microservice
 
@@ -136,7 +140,7 @@ Data model will be used by the caller mostly, so place that in pkg directory, wh
 Controller provides some interface and the repository will implement, for example: (metadata repository implement Get and Put functions).
 
 
-<a id="orgf3d314e"></a>
+<a id="orgb39d693"></a>
 
 # Service Discovery
 
@@ -149,14 +153,14 @@ Although now, each time we add or remove a service instance, we need to update t
 The solution for this is to use service discovery.
 
 
-<a id="org4d6c5af"></a>
+<a id="org3c5cf19"></a>
 
 ## Registry
 
 Service registry stores information about available service instances. It has features such as register an instance of a service, deregister an instance of a service, return the list of all instances of the service in the form of network addresses. The registry monitors the health of the instances.
 
 
-<a id="org96dd8fe"></a>
+<a id="orgbc09811"></a>
 
 ## Discovery models
 
@@ -169,7 +173,7 @@ Service registry stores information about available service instances. It has fe
 ![img](img/server-service-discovery.png)
 
 
-<a id="orge710074"></a>
+<a id="orgbddb235"></a>
 
 ## Service Health monitoring
 
@@ -177,7 +181,7 @@ Service registry stores information about available service instances. It has fe
 -   Push model: The application renews its status by contacting the service registry.
 
 
-<a id="org50e67c8"></a>
+<a id="org6dbeeb7"></a>
 
 ## Service Discovery solutions
 
@@ -193,7 +197,7 @@ In the following image, we see that the movie microservice is correctly calling 
 ![img](./img/service-discovery-output.png)
 
 
-<a id="org2a39b11"></a>
+<a id="orga3e8b45"></a>
 
 # Serialization and Deserialization of data
 
@@ -216,7 +220,7 @@ Here we see that Proto serialization is atleast 40% faster than JSON serializati
 Protocol buffers is a popular option and we will be using this for our project.
 
 
-<a id="org0a683c3"></a>
+<a id="org25d9eaf"></a>
 
 # Synchronous Communication
 
@@ -246,12 +250,12 @@ Here is the output after integration of gRPC to the services and testing with gr
 ![img](./img/grpc-call-outputs.png)
 
 
-<a id="org4a46095"></a>
+<a id="org66900c9"></a>
 
 # Asynchronous Communication
 
 
-<a id="org8aef771"></a>
+<a id="org2e9d447"></a>
 
 ## Basics
 
@@ -260,12 +264,12 @@ Asynchronous communication is a communication between sender and one or more rec
 Asynchronous communication can be even faster than synchronous communication as it avoids context switching when handling multiple requests. So far we have just used synchronous communication.
 
 
-<a id="orge23403c"></a>
+<a id="org1d0633d"></a>
 
 ## Pros and Cons
 
 
-<a id="orge11c403"></a>
+<a id="org17e9f8b"></a>
 
 ### Pros
 
@@ -276,7 +280,7 @@ Asynchronous communication can be even faster than synchronous communication as 
 It is better suited for the cases such as long running processing tasks, send once and processed by multiple clients.
 
 
-<a id="orgc3cf65f"></a>
+<a id="org3b90451"></a>
 
 ### Cons
 
@@ -284,7 +288,7 @@ It is better suited for the cases such as long running processing tasks, send on
 -   Reliance on additional components for message delivery.
 
 
-<a id="orgafe7890"></a>
+<a id="orgcbe15df"></a>
 
 ## Message Broker
 
@@ -299,12 +303,12 @@ It guarantees delivery and provides various levels of guarantees such as:
 They are capable of handling multiple forms of communication models such as pub-sub or message queues, etc.
 
 
-<a id="org674fb48"></a>
+<a id="org030ee96"></a>
 
 ## Patterns of asynchronous communication
 
 
-<a id="orge50be17"></a>
+<a id="org85053e8"></a>
 
 ### Publisher-subscriber model
 
@@ -313,21 +317,21 @@ Every component can publish messages and subscribe to the relevant ones. The rel
 ![img](img/pub-sub-model.png)
 
 
-<a id="org495af86"></a>
+<a id="orgcde0d60"></a>
 
 ### Message Queue model
 
 Used where the event has to be consumed only once. (One-to-one communication)
 
 
-<a id="org761f30f"></a>
+<a id="orgd61ed75"></a>
 
 ## Event Driven Architecture(EDA) Patterns
 
 Refer to my blog on the 4 commonly used EDA Patterns: <https://msvelan.netlify.app/p/event-driven-architecture/>
 
 
-<a id="orgb8e210f"></a>
+<a id="org6f69b2d"></a>
 
 ## Using Apache Kafka as the message broker
 
@@ -348,7 +352,7 @@ For the publisher, let&rsquo;s have an example application that produces rating 
 ![img](img/pub-sub-rating.png)
 
 
-<a id="orgd2bae5b"></a>
+<a id="org03b1516"></a>
 
 ### Application to produce ratings data
 
@@ -357,7 +361,7 @@ For the publisher, let&rsquo;s have an example application that produces rating 
 -   Use the created producer to produce the Kafka message with the event after converting the metadata to JSON and have a timeout for all the events to get produced.
 
 
-<a id="org3ff73e8"></a>
+<a id="orged6ad48"></a>
 
 ### Rating Data Consumer
 
@@ -370,7 +374,7 @@ For the publisher, let&rsquo;s have an example application that produces rating 
 -   The final step is to update the changes in the `rating/cmd/main.go` file. Create `NewIngester` object and pass it to the controller. Call the `StartIngestion` function from the controller in a go routine to run the `ingester` along with the API implemented.
 
 
-<a id="org99e459d"></a>
+<a id="orga7d0b05"></a>
 
 ## Results
 
@@ -381,4 +385,48 @@ Before running the producer script in `cmd/ratingingester/main.go`, if we run `r
 In the following figure I run `rating/cmd/main.go` file first which listens for the channel and then run the producer script (`cmd/ratingingestor/main.go`). We see that the data is being read correctly in the rating service(bottom figure). We also verify this in the top half of the figure by using grpcurl to call the RatingService/GetAggregatedRating gRPC endpoint.
 
 ![img](./img/kafka-rating-ingestion-output.png)
+
+
+<a id="org53d2bde"></a>
+
+# Databases
+
+Allows **durability** - guarantee that all records and any related data changes will be persistent over time.
+
+Having a persistent data-store (database) is important in microservices, because say there are multiple service instances, then the put calls and get calls can go into different service instances. This could cause anomaly, the way to solve this problem is by using database and let all service instances of the same service use the same database.
+
+For our purposes, we use the relational database (MySQL) which follows ACID properties and we can perform complex queries.
+We will create ratings table for storing ratings data, used by the rating service and create movies table for storing metadata data which is used by the metadata service.
+
+
+<a id="org14209c8"></a>
+
+## SQL setup
+
+Run the SQL setup given in the [README.md](./README.md). With that we have SQL running in port 3306 and movieapp database is setup with tables ratings and movies.
+We will be using go-sql-driver to access SQL from Go.
+
+
+<a id="orgc94f6af"></a>
+
+## Steps to add SQL integration to the repository
+
+-   Create `metadata/internal/repository/mysql/mysql.go` file.
+-   Create `Repository` struct storing `*sql.DB` and add New function which returns a new Repository.
+-   Define the Get and Put functions as defined in the `Repository` interface and implement them appropriately with go-sql-driver.
+-   Create `rating/internal/repository/mysql/mysql.go` file and follow steps 2, 3.
+-   Update the `rating/cmd/main.go` and `metadata/cmd/main.go` to use the mysql package instead of memory package.
+
+
+<a id="org1b1140b"></a>
+
+## Testing results
+
+We put some movie metadata and run the `ratingingester` script, which adds rating for movie<sub>id</sub>=1, 2 and then call `MovieService/GetMovieDetails` to get the output.
+
+![img](./img/grpc-testing-results.png)
+
+Then we stop the rating service manually and start it again and test the persistence of the stored data.
+
+![img](./img/grpc-get-calls-persistance-result.png)
 

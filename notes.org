@@ -344,3 +344,36 @@ Before running the producer script in =cmd/ratingingester/main.go=, if we run =r
 In the following figure I run =rating/cmd/main.go= file first which listens for the channel and then run the producer script (=cmd/ratingingestor/main.go=). We see that the data is being read correctly in the rating service(bottom figure). We also verify this in the top half of the figure by using grpcurl to call the RatingService/GetAggregatedRating gRPC endpoint.
 
 [[./img/kafka-rating-ingestion-output.png]]
+
+** Databases
+
+Allows *durability* - guarantee that all records and any related data changes will be persistent over time.
+
+Having a persistent data-store (database) is important in microservices, because say there are multiple service instances, then the put calls and get calls can go into different service instances. This could cause anomaly, the way to solve this problem is by using database and let all service instances of the same service use the same database.
+
+For our purposes, we use the relational database (MySQL) which follows ACID properties and we can perform complex queries.
+We will create ratings table for storing ratings data, used by the rating service and create movies table for storing metadata data which is used by the metadata service.
+
+*** SQL setup
+
+Run the SQL setup given in the [[./README.md][README.md]]. With that we have SQL running in port 3306 and movieapp database is setup with tables ratings and movies.
+We will be using go-sql-driver to access SQL from Go.
+
+*** Steps to add SQL integration to the repository
+
+- Create =metadata/internal/repository/mysql/mysql.go= file.
+- Create =Repository= struct storing =*sql.DB= and add New function which returns a new Repository.
+- Define the Get and Put functions as defined in the =Repository= interface and implement them appropriately with go-sql-driver.
+- Create =rating/internal/repository/mysql/mysql.go= file and follow steps 2, 3.
+- Update the =rating/cmd/main.go= and =metadata/cmd/main.go= to use the mysql package instead of memory package.
+
+
+*** Testing results
+
+We put some movie metadata and run the =ratingingester= script, which adds rating for movie_id=1, 2 and then call =MovieService/GetMovieDetails= to get the output.
+
+[[./img/grpc-testing-results.png]]
+
+Then we stop the rating service manually and start it again and test the persistence of the stored data.
+
+[[./img/grpc-get-calls-persistance-result.png]]

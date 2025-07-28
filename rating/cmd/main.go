@@ -17,7 +17,7 @@ import (
 	"github.com/MSVelan/movieapp/rating/internal/controller/rating"
 	grpchandler "github.com/MSVelan/movieapp/rating/internal/handler/grpc"
 	"github.com/MSVelan/movieapp/rating/internal/ingester/kafka"
-	"github.com/MSVelan/movieapp/rating/internal/repository/memory"
+	"github.com/MSVelan/movieapp/rating/internal/repository/mysql"
 )
 
 const serviceName = "rating"
@@ -47,7 +47,10 @@ func main() {
 	}()
 	defer registry.Deregister(ctx, instanceID, serviceName)
 
-	repo := memory.New()
+	repo, err := mysql.New()
+	if err != nil {
+		panic(err)
+	}
 	ingester, err := kafka.NewIngester("localhost", "rating", "ratings")
 	if err != nil {
 		log.Fatalf("failed to initialize ingester: %v", err)

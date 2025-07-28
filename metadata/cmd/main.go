@@ -11,7 +11,7 @@ import (
 	"github.com/MSVelan/movieapp/gen"
 	"github.com/MSVelan/movieapp/metadata/internal/controller/metadata"
 	grpchandler "github.com/MSVelan/movieapp/metadata/internal/handler/grpc"
-	"github.com/MSVelan/movieapp/metadata/internal/repository/memory"
+	"github.com/MSVelan/movieapp/metadata/internal/repository/mysql"
 	"github.com/MSVelan/movieapp/pkg/discovery"
 	"github.com/MSVelan/movieapp/pkg/discovery/consul"
 	"google.golang.org/grpc"
@@ -45,7 +45,10 @@ func main() {
 	}()
 	defer registry.Deregister(ctx, instanceID, serviceName)
 
-	repo := memory.New()
+	repo, err := mysql.New()
+	if err != nil {
+		panic(err)
+	}
 	svc := metadata.New(repo) // svc is same as controller
 	h := grpchandler.New(svc)
 	lis, err := net.Listen("tcp", fmt.Sprintf("localhost:%v", port))
