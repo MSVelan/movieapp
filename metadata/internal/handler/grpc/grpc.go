@@ -41,3 +41,10 @@ func (h *Handler) GetMetadata(ctx context.Context, req *gen.GetMetadataRequest) 
 }
 
 // TODO: implement PutMetadata.
+func (h *Handler) PutMetadata(ctx context.Context, req *gen.PutMetadataRequest) (*gen.PutMetadataResponse, error) {
+	if req == nil || req.Metadata == nil || req.MovieId == "" {
+		return nil, status.Errorf(codes.InvalidArgument, "nil request or empty metadata or empty id")
+	}
+	err := h.ctrl.Put(ctx, req.MovieId, model.MetadataFromProto(req.Metadata))
+	return &gen.PutMetadataResponse{}, err
+}
