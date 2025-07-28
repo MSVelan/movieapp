@@ -2,10 +2,10 @@ package main
 
 import (
 	"context"
-	"flag"
 	"fmt"
 	"log"
 	"net"
+	"os"
 	"time"
 
 	"github.com/MSVelan/movieapp/gen"
@@ -17,14 +17,22 @@ import (
 	"github.com/MSVelan/movieapp/pkg/discovery/consul"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/reflection"
+	"gopkg.in/yaml.v3"
 )
 
 const serviceName = "movie"
 
 func main() {
-	var port int
-	flag.IntVar(&port, "port", 8083, "API handler port")
-	flag.Parse()
+	f, err := os.Open("base.yaml")
+	if err != nil {
+		panic(err)
+	}
+	var cfg config
+	if err := yaml.NewDecoder(f).Decode(&cfg); err != nil {
+		panic(err)
+	}
+	port := cfg.API.Port
+
 	log.Printf("Starting the %s service on port %d", serviceName, port)
 	registry, err := consul.NewRegistry("localhost:8500")
 	if err != nil {

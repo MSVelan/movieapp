@@ -29,6 +29,7 @@ This repository consists of three microservices: movie, metadata and rating. Thi
 - synchronous communication using HTTP API endpoints as well as gRPC endpoints.
 - asynchronous communication using Apache Kafka
 - in-memory data stores and MySQL for the microservices
+- containerized the services with docker (still in development to integrate with SQL, Kafka and Consul)
 
 For more details on how I implemented this, please check out [[./notes.md][notes.md]].
 
